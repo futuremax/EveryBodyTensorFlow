@@ -20,6 +20,7 @@ from pandas import DataFrame
 from sklearn import metrics
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn import learn_io
+from datetime import datetime
 
 # reading data set from csv file ==========================
 xsize  = 2
@@ -64,20 +65,21 @@ plt.scatter(data.xdata1.values[int(data.xdata1.size/2)+2:-1],\
 plt.title('Cluster in Cluster data Example')
 plt.legend()
 
+plt.show()
 
 
 # configure training parameters =====================================
-learning_rate = 0.001
+learning_rate = 1E-3
 training_epochs = 100
-batch_size = 50
+batch_size = 100
 display_step = 1
 
 
 # computational TF graph construction ================================
 # Network Parameters
-n_hidden_1 = 5 # 1st layer number of neurons
+n_hidden_1 = 7 # 1st layer number of neurons
 n_hidden_2 = 5 # 2nd layer number of neurons
-num_input = xsize   # two-dimensional input X = [x1 x2]
+num_input = xsize   # two-dimensional input X = [1x2]
 num_classes = ysize # 2 class
 
 # tf Graph input
@@ -100,11 +102,11 @@ biases = {
 def neural_net(x):
     # Hidden fully connected layer with 5 neurons
     layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-    layer_1 = tf.nn.softmax(layer_1)
+    layer_1 = tf.nn.relu(layer_1)
 
     # Hidden fully connected layer with 5 neurons
     layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-    layer_2 = tf.nn.softmax(layer_2)
+    layer_2 = tf.nn.relu(layer_2)
 
     # Output fully connected layer with a neuron for each class
     out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
@@ -130,15 +132,26 @@ errRateValidation   = np.zeros(training_epochs)
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
-# Start training
+now             = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+root_logdir     = 'export/lab6_cluster/tf_logs'
+logdir          = "{}/run-{}/".format(root_logdir,now)
+
+summary_writer  = tf.summary.FileWriter(logdir=logdir)
+summary_writer.add_graph(tf.get_default_graph())
+
+loss_summary        = tf.summary.scalar('loss',cost)
+accuracy_summary    = tf.summary.scalar('accuracy',accuracy)
+
+
+# Start training ===============================================
 with tf.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
     # save graph model
-    tf.train.write_graph(sess.graph_def,getcwd() + '/model/lab6','tfgraph_clusterincluster_ann_lab6.pbtxt')
-    tf.train.write_graph(sess.graph_def,getcwd() + '/model/lab6','tfgraph_clusterincluster_ann_lab6.pb',as_text =False)
+    tf.train.write_graph(sess.graph_def,getcwd() + '/export/lab6/pb','tfgraph_clusterincluster_ann_lab6.pbtxt')
+    tf.train.write_graph(sess.graph_def,getcwd() + '/export/lab6/pb','tfgraph_clusterincluster_ann_lab6.pb',as_text =False)
 
     for epoch in range(training_epochs):
         avg_cost = 0.
@@ -160,6 +173,9 @@ with tf.Session() as sess:
             # Compute average loss
             avg_cost += local_batch_cost / total_batch
             # print ("At %d-th batch in %d-epoch, avg_cost = %f" % (i,epoch,avg_cost) )
+
+            summary_str = accuracy_summary.eval(feed_dict={X: batch_xs, Y: batch_ts})
+            summary_writer.add_summary(summary_str, epoch*training_epochs + i)
 
             # Display logs per epoch step
         if display_step == 0:
@@ -184,12 +200,9 @@ with tf.Session() as sess:
 
     print("Optimization Finished!")
 
-# Calculate accuracy for test images
-##-------------------------------------------
-# # training Result display
-print("Validation set Err rate:", accuracy.eval({X: x_validation_data, Y: t_validation_data},session=sess)/validation_size)
+summary_writer.close()
 
-
+# Training result visualization ===============================================
 hfig2 = plt.figure(2,figsize=(10,10))
 epoch_index = np.array([elem for elem in range(training_epochs)])
 plt.plot(epoch_index,errRateTraining,label='Training data',color='r',marker='o')
@@ -199,4 +212,4 @@ plt.title('Classification Error Rate of prediction:')
 plt.xlabel('Iteration epoch')
 plt.ylabel('error Rate')
 
-
+plt.show()

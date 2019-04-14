@@ -68,18 +68,18 @@ plt.legend()
 
 
 # configure training parameters =====================================
-learning_rate = 0.005
-training_epochs = 200
-batch_size = 50
+learning_rate = 5E-3
+training_epochs = 500
+batch_size = 100
 display_step = 1
 
 
 # computational TF graph construction ================================
 # Network Parameters
 n_hidden_1 = 7 # 1st layer number of neurons
-n_hidden_2 = 7 # 2nd layer number of neurons
+n_hidden_2 = 4 # 2nd layer number of neurons
 n_hidden_3 = 4 # 3rd layer number of neurons
-num_input = xsize   # two-dimensional input X = [x1 x2]
+num_input = xsize   # two-dimensional input X = [1x2]
 num_classes = ysize # 2 class
 
 # tf Graph input
@@ -104,15 +104,15 @@ biases = {
 def neural_net(x):
     # Hidden fully connected layer with 7 neurons
     layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-    layer_1 = tf.nn.softmax(layer_1)
+    layer_1 = tf.nn.relu(layer_1)
 
     # Hidden fully connected layer with 7 neurons
     layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-    layer_2 = tf.nn.softmax(layer_2)
+    layer_2 = tf.nn.relu(layer_2)
 
     # Hidden fully connected layer with 4 neurons
     layer_3 = tf.add(tf.matmul(layer_2, weights['h3']), biases['b3'])
-    layer_3 = tf.nn.softmax(layer_3)
+    layer_3 = tf.nn.relu(layer_3)
 
     # Output fully connected layer with a neuron for each class
     out_layer = tf.matmul(layer_3, weights['out']) + biases['out']
@@ -127,8 +127,8 @@ prediction = tf.nn.softmax(logits)
 
 # Define loss and optimizer
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=Y))
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
-#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 # Evaluate model
 correct_pred = tf.equal(tf.argmax(prediction, 1), tf.argmax(Y, 1))
@@ -140,11 +140,12 @@ errRateValidation   = np.zeros(training_epochs)
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
-# Start training
+# Start training ===============================================
 with tf.Session() as sess:
 
     # Run the initializer
     sess.run(init)
+    print("--------------------------------------------")
 
     for epoch in range(training_epochs):
         avg_cost = 0.
@@ -190,11 +191,8 @@ with tf.Session() as sess:
 
     print("Optimization Finished!")
 
-    # Calculate accuracy for test images
-    ##-------------------------------------------
-    # # training Result display
-    print("Validation set Err rate:", accuracy.eval({X: x_validation_data, Y: t_validation_data},session=sess)/validation_size)
 
+# Training result visualization ===============================================
 
 hfig2 = plt.figure(2,figsize=(10,10))
 epoch_index = np.array([elem for elem in range(training_epochs)])
@@ -204,5 +202,5 @@ plt.legend()
 plt.title('Classification Error Rate of prediction:')
 plt.xlabel('Iteration epoch')
 plt.ylabel('error Rate')
-
+plt.show()
 

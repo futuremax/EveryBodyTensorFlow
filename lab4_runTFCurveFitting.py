@@ -114,7 +114,7 @@ print ('Functions in TF graph are ready')
 
 ## Performance evaluation model ========================_y===========
 # y               : data output
-# pred_y: prediction output by model,  a x^3 + b x^2 + c x + d
+# pred_y: prediction output by model,
 correct_prediction = cost
 
 # Calculate error rate using data --------------
@@ -181,10 +181,6 @@ with tf.Session() as sess:
     pred_d = sess.run(d)
 
 
-##-------------------------------------------
-# # training Result display
-print("Validation set Err rate:", accuracy.eval({x: x_validation_data, y: y_validation_data},session=sess)/validation_size)
-
 
 hfig1 = plt.figure(1,figsize=(10,10))
 epoch_index = np.array([elem for elem in range(training_epochs)])
@@ -205,6 +201,8 @@ plt.legend()
 plt.title('A line fitting example:')
 plt.xlabel('X data')
 plt.ylabel('Y data')
+
+plt.show()
 # FIG_SAVE_DIR = getcwd() + '/figs/'
 # hfig1.savefig(FIG_SAVE_DIR + 'runExample_TFLogisticReg_aymeric_ErrRate.png')
 

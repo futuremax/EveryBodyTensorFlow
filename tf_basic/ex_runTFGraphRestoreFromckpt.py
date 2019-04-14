@@ -25,7 +25,7 @@ import pandas as pd
 tf.reset_default_graph()
 
 # .ckpt로 부터 모델 weight 복구하기
-model_dir = getcwd() + '/model/ex/'
+model_dir = getcwd() + '/pb_and_ckpt/ex/'
 
 # construct naive three varible computational graph
 v1 = tf.Variable(0, name='variable1')
@@ -36,6 +36,9 @@ init_op = tf.global_variables_initializer()
 
 # Add ops to restore all the variables.
 saver = tf.train.Saver()
+# 1) max_to_keep : 들고 있는 saver.save()에서 의해서 저장된다.  checkpoint 개수
+# 2) keep_checkpoint_every_n_hour: 해당 시점에서 가장 최근에 saver.save()에 의해서 저장된 파라미터를 저장하낟.
+# saver = tf.train.Saver(max_to_keep= , keep_checkpoint_every_n_hours=)
 
 
 with tf.Session() as sess:

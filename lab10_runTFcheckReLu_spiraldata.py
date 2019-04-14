@@ -2,12 +2,17 @@
 #! /usr/bin/env python
 '''
 #------------------------------------------------------------
-    filename: lab7_runTCcheckGradientVanishing_spiraldata.py
+    filename: lab10_runTCcheckReLu_spiraldata.py
 
-    To check Gradient Vanishing problem in
+    To check effect of Relu activation function over
+    Deep neural networks.
+    This script wants to see Relu activation can mitigate
+    Gradient Vanishing problem in
     A Multi-Hidden Layers Fully Connected Neural Network.
 
-    This example data set is using two class spiral data
+    This example data set is using two class spiral data.
+    Applying the Relu activation to lab7 example
+    instead of softmax activation
 
     written by Jaewook Kang @ Jan 2018
 #------------------------------------------------------------
@@ -57,25 +62,26 @@ t_training_data = t_data[0:training_size,:]
 x_validation_data = x_data[training_size:-1,:]
 t_validation_data = t_data[training_size:-1,:]
 
-# #data plot
-hfig1= plt.figure(1,figsize=[10,10])
-plt.scatter(data.xdata1.values[0:int(data.xdata1.size/2)],\
-            data.xdata2.values[0:int(data.xdata1.size/2)], \
-            color='b',label='class0')
-plt.scatter(data.xdata1.values[int(data.xdata1.size/2)+2:-1],\
-            data.xdata2.values[int(data.xdata1.size/2)+2:-1], \
-            color='r',label='class1')
-plt.title('Two Spiral data Example')
-plt.legend()
-
 
 # configure training parameters =====================================
-learning_rate = 1E-5
-training_epochs = 5
-batch_size = 100
+# To see mitigation of vanishing gradient problem
+learning_rate = 5E-3
+training_epochs = 5000
+batch_size = 500
 display_step = 1
 total_batch = int(training_size / batch_size)
 
+
+weight_init_fn = tf.contrib.layers.xavier_initializer()
+# weight_init_fn  = tf.contrib.layers.variance_scaling_initializer()
+# weight_init_fn = tf.random_normal_initializer()
+
+## for convergence
+# learning_rate = 5E-3
+# training_epochs = 5000
+# batch_size = 500
+# display_step = 1
+# total_batch = int(training_size / batch_size)
 
 # computational TF graph construction ================================
 # Network Parameters
@@ -89,51 +95,95 @@ n_hidden_5 = 4 # 5rd layer number of neurons
 num_input = xsize   # two-dimensional input X = [1x2]
 num_classes = ysize # 2 class
 
-#-------------------------------
-
 # tf Graph input
 X = tf.placeholder(tf.float32, [None, num_input])
 Y = tf.placeholder(tf.float32, [None, num_classes])
 
 # Store layers weight & bias
+'''
+'h1': tf.Variable(tf.random_normal([num_input,  n_hidden_1])),
+'h2': tf.Variable(tf.random_normal([n_hidden_1, n_hidden_2])),
+'h3': tf.Variable(tf.random_normal([n_hidden_2, n_hidden_3])),
+'h4': tf.Variable(tf.random_normal([n_hidden_3, n_hidden_4])),
+'h5': tf.Variable(tf.random_normal([n_hidden_4, n_hidden_5])),
+'out':tf.Variable(tf.random_normal([n_hidden_5, num_classes]))
+'''
 weights = {
-    'h1': tf.Variable(tf.random_normal([num_input,  n_hidden_1])),
-    'h2': tf.Variable(tf.random_normal([n_hidden_1, n_hidden_2])),
-    'h3': tf.Variable(tf.random_normal([n_hidden_2, n_hidden_3])),
-    'h4': tf.Variable(tf.random_normal([n_hidden_3, n_hidden_4])),
-    'h5': tf.Variable(tf.random_normal([n_hidden_4, n_hidden_5])),
-    'out':tf.Variable(tf.random_normal([n_hidden_5, num_classes]))
+    'h1': tf.get_variable(name='h1_weight',
+                          shape=[num_input, n_hidden_1],
+                          initializer=weight_init_fn),
+
+    'h2': tf.get_variable(name='h2_weight',
+                           shape=[n_hidden_1,n_hidden_2],
+                           initializer=weight_init_fn),
+
+    'h3': tf.get_variable(name='h3_weight',
+                           shape=[n_hidden_2, n_hidden_3],
+                           initializer=weight_init_fn),
+
+    'h4': tf.get_variable(name='h4_weight',
+                           shape=[n_hidden_3, n_hidden_4],
+                           initializer=weight_init_fn),
+
+    'h5': tf.get_variable(name='h5_weight',
+                           shape=[n_hidden_4, n_hidden_5],
+                           initializer=weight_init_fn),
+
+    'out': tf.get_variable(name='out_weight',
+                           shape=[n_hidden_5, num_classes],
+                           initializer=weight_init_fn)
 }
+'''
+'b1': tf.Variable(tf.random_normal([n_hidden_1])),
+'b2': tf.Variable(tf.random_normal([n_hidden_2])),
+'b3': tf.Variable(tf.random_normal([n_hidden_3])),
+'b4': tf.Variable(tf.random_normal([n_hidden_4])),
+'b5': tf.Variable(tf.random_normal([n_hidden_5])),
+'out': tf.Variable(tf.random_normal([num_classes]))
+'''
 biases = {
-    'b1': tf.Variable(tf.random_normal([n_hidden_1])),
-    'b2': tf.Variable(tf.random_normal([n_hidden_2])),
-    'b3': tf.Variable(tf.random_normal([n_hidden_3])),
-    'b4': tf.Variable(tf.random_normal([n_hidden_4])),
-    'b5': tf.Variable(tf.random_normal([n_hidden_5])),
-    'out': tf.Variable(tf.random_normal([num_classes]))
+    'b1': tf.get_variable(name='b1_bias',
+                          shape=[n_hidden_1],
+                          initializer= weight_init_fn),
+    'b2': tf.get_variable(name='b2_bias',
+                          shape=[n_hidden_2],
+                          initializer=weight_init_fn),
+    'b3': tf.get_variable(name='b3_bias',
+                          shape=[n_hidden_3],
+                          initializer=weight_init_fn),
+    'b4': tf.get_variable(name='b4_bias',
+                          shape=[n_hidden_4],
+                          initializer=weight_init_fn),
+    'b5': tf.get_variable(name='b5_bias',
+                          shape=[n_hidden_5],
+                          initializer=weight_init_fn),
+    'out': tf.get_variable(name='out_bias',
+                          shape=[num_classes],
+                          initializer=weight_init_fn)
 }
+
 
 # Create model
 def neural_net(x):
     # Input fully connected layer with 10 neurons
     layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-    layer_1 = tf.nn.softmax(layer_1)
+    layer_1 = tf.nn.relu(layer_1)
 
     # Hidden fully connected layer with 7 neurons
     layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-    layer_2 = tf.nn.softmax(layer_2)
+    layer_2 = tf.nn.relu(layer_2)
 
     # Hidden fully connected layer with 7 neurons
     layer_3 = tf.add(tf.matmul(layer_2, weights['h3']), biases['b3'])
-    layer_3 = tf.nn.softmax(layer_3)
+    layer_3 = tf.nn.relu(layer_3)
 
     # Hidden fully connected layer with 4 neurons
     layer_4 = tf.add(tf.matmul(layer_3, weights['h4']), biases['b4'])
-    layer_4 = tf.nn.softmax(layer_4)
+    layer_4 = tf.nn.relu(layer_4)
 
     # Hidden fully connected layer with 4 neurons
     layer_5 = tf.add(tf.matmul(layer_4, weights['h5']), biases['b5'])
-    layer_5 = tf.nn.softmax(layer_5)
+    layer_5 = tf.nn.relu(layer_5)
 
     # Output fully connected layer with a neuron for each class
     out_layer = tf.matmul(layer_5, weights['out']) + biases['out']
@@ -145,15 +195,16 @@ prediction = tf.nn.softmax(logits)
 
 # Define loss and optimizer
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=Y))
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
-#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+# optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
+# optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.8).minimize(cost)
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 # Evaluate model
 correct_pred = tf.equal(tf.argmax(prediction, 1), tf.argmax(Y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
-errRateTraining     = np.zeros(training_epochs)
-errRateValidation   = np.zeros(training_epochs)
+errRatebyTrainingSet     = np.zeros(training_epochs)
+errRatebyValidationSet   = np.zeros(training_epochs)
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -250,19 +301,30 @@ with tf.Session() as sess:
             batch_valid_xs = x_validation_data
             batch_valid_ys = t_validation_data
 
-            errRateTraining[epoch] = 1.0 - accuracy.eval({X: batch_train_xs, \
+            errRatebyTrainingSet[epoch] = 1.0 - accuracy.eval({X: batch_train_xs, \
                                                           Y: batch_train_ys}, session=sess)
 
-            errRateValidation[epoch] = 1.0 - accuracy.eval({X: batch_valid_xs, \
+            errRatebyValidationSet[epoch] = 1.0 - accuracy.eval({X: batch_valid_xs, \
                                                             Y: batch_valid_ys}, session=sess)
 
-            print("Training set Err rate: %s"   % errRateTraining[epoch])
-            print("Validation set Err rate: %s" % errRateValidation[epoch])
+            print("Training set Err rate: %s"   % errRatebyTrainingSet[epoch])
+            print("Validation set Err rate: %s" % errRatebyValidationSet[epoch])
             print("--------------------------------------------")
 
     print("Optimization Finished!")
 
 # Training result visualization ===============================================
+
+hfig1= plt.figure(1,figsize=[10,10])
+plt.scatter(data.xdata1.values[0:int(data.xdata1.size/2)],\
+            data.xdata2.values[0:int(data.xdata1.size/2)], \
+            color='b',label='class0')
+plt.scatter(data.xdata1.values[int(data.xdata1.size/2)+2:-1],\
+            data.xdata2.values[int(data.xdata1.size/2)+2:-1], \
+            color='r',label='class1')
+plt.title('Two Spiral data Example')
+plt.legend()
+
 
 hfig2 = plt.figure(2,figsize=(10,10))
 batch_index = np.array([elem for elem in range(total_batch)])
@@ -270,9 +332,17 @@ plt.plot(batch_index,grad_wrt_weight_layer1_iter,label='layer1',color='b',marker
 plt.plot(batch_index,grad_wrt_weight_layer4_iter,label='layer4',color='y',marker='o')
 plt.plot(batch_index,grad_wrt_weight_layer5_iter,label='layer5',color='r',marker='o')
 plt.legend()
-plt.title('Weight Gradient over minibatch iter @ training epoch = %s' % training_epochs)
+plt.title('Weight Gradient with ReLu over minibatch iter @ training epoch = %s' % training_epochs)
 plt.xlabel('minibatch iter')
 plt.ylabel('Weight Gradient')
 
 
+hfig3 = plt.figure(3,figsize=(10,10))
+epoch_index = np.array([elem for elem in range(training_epochs)])
+plt.plot(epoch_index,errRatebyTrainingSet,label='Training data',color='r',marker='o')
+plt.plot(epoch_index,errRatebyValidationSet,label='Validation data',color='b',marker='x')
+plt.legend()
+plt.title('Train/Valid Err')
+plt.xlabel('Iteration epoch')
+plt.ylabel('error Rate')
 plt.show()

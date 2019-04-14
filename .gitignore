@@ -99,3 +99,18 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+
+
+*.local
+.idea/*
+
+
+# export and import files
+pb_and_ckpt/*
+data/mnist/*
+tf_basic/pb_and_ckpt/*
+
+*jwkangmacproui*
+
+*.pyc
